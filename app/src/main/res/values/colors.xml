@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#002723</color>
+    <color name="colorPrimaryDark">#003A33</color>
+    <color name="colorAccent">#00897B</color>
+    <color name="colorAccentVariant">#7C00897B</color>11
+    <color name="delete">#F06292</color>
+    <color name="edit">#7986CB</color>
+    <color name="background">#000E0D</color>
+    <color name="textColor">#CECECE</color>
+    <color name="divider_color">#002724</color>
+    <color name="disable_color">#CDCDCD</color>
+    <color name="input">#CDCDCD</color>
+</resources>
