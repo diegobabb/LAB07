@@ -99,6 +99,7 @@ public class CursoFragment extends Fragment implements CursoAdapter.CursoAdapter
                     adapter.getModel().getCursos().add(pos2, curso);
                     if (adapter.getModel().getCursos() != adapter.getModel().getCursosFiltrados())
                         adapter.getModel().getCursosFiltrados().add(pos, curso);
+                    cursoViewModel.solicitarServicio(SERVICIOS_CURSOS.AGREGAR_CURSO, curso);
                     adapter.notifyItemInserted(pos);
                 }
                 flag = false;

@@ -1,6 +1,8 @@
 package com.example.lab01.Logica;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 /**
  * Created by User on 21/03/2018.
@@ -89,5 +91,15 @@ public class Curso implements Serializable {
                 '}';
                 */
     }
+
+    public String toStringURLRequest() throws UnsupportedEncodingException {
+        return "?" +
+                "nombre=" + URLEncoder.encode(this.nombre , "UTF-8") +
+                "&codigo=" + URLEncoder.encode(this.codigo , "UTF-8") +
+                "&credito=" + this.creditos +
+                "&horas=" +  this.horas +
+                "&carrera=" + this.carrera;
+    }
+
 
 }
