@@ -1,31 +1,29 @@
 package com.example.lab01.ui.cursos;
 
 import android.os.AsyncTask;
+import android.util.Log;
+import android.widget.Toast;
 
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
-import com.example.lab01.AccesoDatos.ModelData;
 import com.example.lab01.Logica.Curso;
-import com.example.lab01.Logica.Profesor;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
 enum SERVICIOS_CURSOS {
-    LISTAR_CURSOS
+    LISTAR_CURSOS, ELIMINAR_CURSO, AGREGAR_CURSO, EDITAR_CURSO
 };
 
 
 public class CursoViewModel extends ViewModel {
+
     public AsyncTask.Status STATUS = null;
     private MutableLiveData<String> mText;
     private ArrayList<Curso> cursos;
@@ -35,7 +33,7 @@ public class CursoViewModel extends ViewModel {
         mText = new MutableLiveData<>();
         mText.setValue("Este es el apartado de Cursos");
         this.cursos = this.cursosFiltrados = new ArrayList<>();
-        solicitarServicio(SERVICIOS_CURSOS.LISTAR_CURSOS);
+        solicitarServicio(SERVICIOS_CURSOS.LISTAR_CURSOS, null);
     }
 
     public ArrayList<Curso> getCursos() {
@@ -52,21 +50,23 @@ public class CursoViewModel extends ViewModel {
 
     public boolean agregarCurso(Curso curso) {
         cursos.add(curso);
-        return true;
+        return solicitarServicio(SERVICIOS_CURSOS.AGREGAR_CURSO, curso) == 1;
     }
 
     public boolean eliminarCurso(Curso c) {
         cursos.remove(c);
         cursosFiltrados.remove(c);
-        return true;
+        return solicitarServicio(SERVICIOS_CURSOS.ELIMINAR_CURSO, c) == 1;
     }
 
     public int editarCurso(Curso curso) {
         int index = 0;
         for (Curso curso_ite : cursos) {
             if (curso_ite.getCodigo().trim().toLowerCase().equals(curso.getCodigo().trim().toLowerCase())) {
-                eliminarCurso(curso_ite);
+                cursos.remove(curso_ite);
+                cursosFiltrados.remove(curso_ite);
                 cursos.add(index, curso);
+                solicitarServicio(SERVICIOS_CURSOS.EDITAR_CURSO, curso);
                 return index;
             }
             index++;
@@ -74,21 +74,37 @@ public class CursoViewModel extends ViewModel {
         return -1;
     }
 
-    private AsyncTask.Status solicitarServicio(SERVICIOS_CURSOS servicio) {
+    public int solicitarServicio(SERVICIOS_CURSOS servicio, Curso c) {
 
         class MyAsyncTask extends AsyncTask<String, String, String> {
 
             SERVICIOS_CURSOS servicio;
             String url;
+            int response = 0;
 
-            public MyAsyncTask(SERVICIOS_CURSOS s) {
+            public MyAsyncTask(SERVICIOS_CURSOS s, Curso c) throws UnsupportedEncodingException {
                 super();
                 this.servicio = s;
                 switch (s) {
                     case LISTAR_CURSOS:
                         url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/listar";
                         break;
+                    case ELIMINAR_CURSO:
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/eliminar" + "?codigo=" + c.getCodigo();
+                        break;
+                    case AGREGAR_CURSO:
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/insertar" + c.toStringURLRequest();
+                        Log.d("URL:", c.toStringURLRequest());
+                        break;
+                    case EDITAR_CURSO:
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/modificar" + c.toStringURLRequest();
+                        Log.d("URL:", c.toStringURLRequest());
+                        break;
                 }
+            }
+
+            public MyAsyncTask(SERVICIOS_CURSOS s) throws UnsupportedEncodingException {
+                this(s, null);
             }
 
             @Override
@@ -162,19 +178,34 @@ public class CursoViewModel extends ViewModel {
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-                    }
-                    ;
-                    break;
+                    } break;
+
+                    case AGREGAR_CURSO:{
+                        Log.i("Response:", s.toString());
+                        response = Integer.parseInt(s.trim());
+                    } break;
+                    case ELIMINAR_CURSO:{
+                        Log.i("Response:", s.toString());
+                        response = Integer.parseInt(s.trim());
+                    } break;
+                    case EDITAR_CURSO:{
+                        Log.i("Response:", s.toString());
+                        response = Integer.parseInt(s.trim());
+                    } break;
                 }
 
                 CursoFragment.getAdapter().notifyDataSetChanged();
                 STATUS = Status.FINISHED;
             }
         }
-
-        MyAsyncTask task = new MyAsyncTask(servicio);
-        task.execute();
-        return task.getStatus();
+        try {
+            MyAsyncTask task = new MyAsyncTask(servicio, c);
+            task.execute();
+            return task.response;
+        }
+        catch(Exception e){
+            return 0;
+        }
     }
 
 }
