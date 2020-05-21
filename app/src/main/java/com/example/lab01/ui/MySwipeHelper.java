@@ -46,22 +46,36 @@ public class MySwipeHelper extends ItemTouchHelper.SimpleCallback {
         switch (direction) {
             case ItemTouchHelper.LEFT:
                 final Profesor aux = adapter.getmDataset().remove(position);
-                ModelData.getInstance().getProfesorList().remove(aux);
+                fragment.getProfesorViewModel().getArrayTeachers().remove(aux);
                 adapter.notifyItemRemoved(position);
                 Snackbar.make(recyclerView, aux.getNombre(), Snackbar.LENGTH_LONG)
                         .setAction("Deshacer", new View.OnClickListener() {
                             private boolean flag = true;
+
                             @Override
                             public void onClick(View view) {
                                 if (flag) {
                                     adapter.getmDataset().add(position, aux);
-                                    if (!adapter.getmDataset().equals(ModelData.getInstance().getProfesorList()))
-                                        ModelData.getInstance().getProfesorList().add(position, aux);
+                                    if (!adapter.getmDataset().equals(fragment.getProfesorViewModel().getArrayTeachers()))
+                                        fragment.getProfesorViewModel().getArrayTeachers().add(position, aux);
                                     adapter.notifyItemInserted(position);
                                 }
                                 flag = false;
                             }
-                        }).show();
+                        }).addCallback(new Snackbar.Callback() {
+
+                    @Override
+                    public void onDismissed(Snackbar snackbar, int event) {
+                        if (event == Snackbar.Callback.DISMISS_EVENT_TIMEOUT) {
+                            fragment.removeProfesor(aux);
+                        }
+                    }
+
+                    @Override
+                    public void onShown(Snackbar snackbar) {
+                        snackbar.show();
+                    }
+                }).show();
                 break;
             case ItemTouchHelper.RIGHT:
                 fragment.moveToAgrEdiProfesorActivity(adapter.getmDataset().get(position), position);

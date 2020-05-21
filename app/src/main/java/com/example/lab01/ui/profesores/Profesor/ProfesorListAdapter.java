@@ -14,6 +14,7 @@ import com.example.lab01.R;
 import java.util.ArrayList;
 
 public class ProfesorListAdapter extends RecyclerView.Adapter<ProfesorListAdapter.MyViewHolder> {
+
     private ArrayList<Profesor> mDataset;
 
     static class MyViewHolder extends RecyclerView.ViewHolder {
