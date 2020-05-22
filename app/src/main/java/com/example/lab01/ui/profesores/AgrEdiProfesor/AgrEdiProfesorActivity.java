@@ -17,13 +17,11 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 
-import com.example.lab01.AccesoDatos.ModelData;
 import com.example.lab01.Logica.Curso;
 import com.example.lab01.Logica.Profesor;
 import com.example.lab01.MenuPrincipal;
 import com.example.lab01.R;
 import com.example.lab01.ui.profesores.Profesor.ProfesorFragment;
-import com.example.lab01.ui.profesores.Profesor.ProfesorViewModel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -199,11 +197,7 @@ public class AgrEdiProfesorActivity extends AppCompatActivity implements View.On
             private MyAsyncTask(SERVICIOS_EDIT_SAVE_PROFESOR s, Profesor profesor) {
                 super();
                 this.servicio = s;
-                if (s == SERVICIOS_EDIT_SAVE_PROFESOR.LISTAR_CURSOS) {
-                    url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/listar";
-                } else {
-                    url = String.format(ProfesorFragment.DIRECCION_SERVLET, String.format(((SERVICIOS_EDIT_SAVE_PROFESOR.EDITAR_PROFESOR == s) ? "modificar?%s" : "insertar?%s"), profesor.toString()));
-                }
+                url = ((s == SERVICIOS_EDIT_SAVE_PROFESOR.LISTAR_CURSOS) ? "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/" : (ProfesorFragment.DIRECCION_SERVLET + "?" + profesor.toString()));
             }
 
             @Override
@@ -220,7 +214,6 @@ public class AgrEdiProfesorActivity extends AppCompatActivity implements View.On
             @Override
             protected String doInBackground(String... params) {
 
-                // implement API in background and store the response in current variable
                 String current = "";
                 try {
                     URL url;
@@ -230,6 +223,21 @@ public class AgrEdiProfesorActivity extends AppCompatActivity implements View.On
 
                         urlConnection = (HttpURLConnection) url
                                 .openConnection();
+
+                        urlConnection.setDoOutput(false);
+                        switch (servicio) {
+                            case LISTAR_CURSOS:
+                                urlConnection.setRequestMethod("GET");
+                                break;
+                            case EDITAR_PROFESOR:
+                                urlConnection.setRequestMethod("POST");
+                                break;
+                            case SAVE_PROFESOR:
+                                urlConnection.setRequestMethod("PUT");
+                                break;
+                            default:
+                                throw new IllegalStateException("Unexpected value: " + servicio);
+                        }
 
                         InputStream in = urlConnection.getInputStream();
 
@@ -288,8 +296,12 @@ public class AgrEdiProfesorActivity extends AppCompatActivity implements View.On
                         e.printStackTrace();
                     }
                     progressBarSpinner.setVisibility(View.GONE);
-                } else
+                } else if (s.equals("1"))
                     goToMenuPrincipal();
+                else {
+                    button.setEnabled(true);
+                    loadingProgressBar.setVisibility(View.GONE);
+                }
 
             }
         }

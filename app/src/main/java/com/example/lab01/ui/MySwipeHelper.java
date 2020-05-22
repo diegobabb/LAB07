@@ -3,6 +3,7 @@ package com.example.lab01.ui;
 import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -67,7 +68,7 @@ public class MySwipeHelper extends ItemTouchHelper.SimpleCallback {
                     @Override
                     public void onDismissed(Snackbar snackbar, int event) {
                         if (event == Snackbar.Callback.DISMISS_EVENT_TIMEOUT) {
-                            fragment.removeProfesor(aux);
+                            fragment.removeProfesor(position, aux);
                         }
                     }
 
