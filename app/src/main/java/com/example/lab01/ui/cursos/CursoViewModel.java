@@ -87,24 +87,20 @@ public class CursoViewModel extends ViewModel {
                 this.servicio = s;
                 switch (s) {
                     case LISTAR_CURSOS:
-                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/listar";
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso";
                         break;
                     case ELIMINAR_CURSO:
-                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/eliminar" + "?codigo=" + c.getCodigo();
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso" + "?codigo=" + c.getCodigo();
                         break;
                     case AGREGAR_CURSO:
-                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/insertar" + c.toStringURLRequest();
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso" + c.toStringURLRequest();
                         Log.d("URL:", c.toStringURLRequest());
                         break;
                     case EDITAR_CURSO:
-                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso/modificar" + c.toStringURLRequest();
+                        url = "http://10.0.2.2:8084/LAB01-WEB/ServletCurso" + c.toStringURLRequest();
                         Log.d("URL:", c.toStringURLRequest());
                         break;
                 }
-            }
-
-            public MyAsyncTask(SERVICIOS_CURSOS s) throws UnsupportedEncodingException {
-                this(s, null);
             }
 
             @Override
@@ -123,24 +119,27 @@ public class CursoViewModel extends ViewModel {
                     HttpURLConnection urlConnection = null;
                     try {
                         url = new URL(this.url);
+                        urlConnection = (HttpURLConnection) url.openConnection();
 
-                        urlConnection = (HttpURLConnection) url
-                                .openConnection();
+                        urlConnection.setDoOutput(false);
+                        //Request Method
+                        switch (this.servicio){
+                            case LISTAR_CURSOS: urlConnection.setRequestMethod("GET"); break;
+                            case EDITAR_CURSO: urlConnection.setRequestMethod("PUT"); break;
+                            case ELIMINAR_CURSO: urlConnection.setRequestMethod("DELETE"); break;
+                            case AGREGAR_CURSO: urlConnection.setRequestMethod("POST"); break;
+                        }
 
                         InputStream in = urlConnection.getInputStream();
-
                         InputStreamReader isw = new InputStreamReader(in);
-
                         int data = isw.read();
                         while (data != -1) {
                             current += (char) data;
                             data = isw.read();
                             System.out.print(current);
-
                         }
                         // return the data to onPostExecute method
                         return current;
-
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
@@ -148,7 +147,6 @@ public class CursoViewModel extends ViewModel {
                             urlConnection.disconnect();
                         }
                     }
-
                 } catch (Exception e) {
                     e.printStackTrace();
                     return "Exception: " + e.getMessage();
