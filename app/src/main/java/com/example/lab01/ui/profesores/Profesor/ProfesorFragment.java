@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -53,10 +54,10 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
 
     private static ProfesorListAdapter adapter;
     private ProfesorViewModel profesorViewModel;
-    public static String EDIT_PROFESOR = "edit";
-    public static String INDEX_PROFESOR = "index";
+    public static final String EDIT_PROFESOR = "edit";
+    private static final String INDEX_PROFESOR = "index";
     private SwipeRefreshLayout swipeRefreshLayout;
-    public static String DIRECCION_SERVLET = "http://10.0.2.2:8084/LAB01-WEB/ServletProfesor/%s";
+    public static String DIRECCION_SERVLET = "http://10.0.2.2:8084/LAB01-WEB/ServletProfesor/";
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -69,13 +70,13 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
         SwipeRefreshLayout.OnRefreshListener refreshListener = new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                solicitarServicio(SERVICIOS_PROFESORES.LISTAR_PROFESORES, null);
+                solicitarServicio(SERVICIOS_PROFESORES.LISTAR_PROFESORES, -1, new Profesor());
             }
         };
 
         swipeRefreshLayout.setOnRefreshListener(refreshListener);
 
-        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
+        FloatingActionButton fab = Objects.requireNonNull(getActivity()).findViewById(R.id.fab);
         fab.setOnClickListener(this);
 
         RecyclerView recyclerView = (RecyclerView) root.findViewById(R.id.list_profesor);
@@ -155,7 +156,7 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
         CustomIntent.customType(getActivity(), "bottom-to-up");
     }
 
-    private AsyncTask.Status solicitarServicio(SERVICIOS_PROFESORES servicio, Profesor profesor) {
+    private AsyncTask.Status solicitarServicio(SERVICIOS_PROFESORES servicio, final int posicion, final Profesor profesor) {
 
         @SuppressLint("StaticFieldLeak")
         class MyAsyncTask extends AsyncTask<String, String, String> {
@@ -166,14 +167,7 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
             private MyAsyncTask(SERVICIOS_PROFESORES s, Profesor profesor) {
                 super();
                 this.servicio = s;
-                switch (s) {
-                    case LISTAR_PROFESORES:
-                        url = String.format(DIRECCION_SERVLET, "listar");
-                        break;
-                    case ELIMINAR_PROFESOR:
-                        url = String.format(DIRECCION_SERVLET, String.format("eliminar?cedula=%s", profesor.getCedula()));
-                        break;
-                }
+                url = DIRECCION_SERVLET + ((SERVICIOS_PROFESORES.LISTAR_PROFESORES == s) ? "" : "?cedula=" + profesor.getCedula());
             }
 
             @Override
@@ -183,7 +177,6 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
 
             @Override
             protected String doInBackground(String... params) {
-
                 // implement API in background and store the response in current variable
                 String current = "";
                 try {
@@ -194,6 +187,18 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
 
                         urlConnection = (HttpURLConnection) url
                                 .openConnection();
+
+                        urlConnection.setDoOutput(false);
+                        switch (servicio) {
+                            case LISTAR_PROFESORES:
+                                urlConnection.setRequestMethod("GET");
+                                break;
+                            case ELIMINAR_PROFESOR:
+                                urlConnection.setRequestMethod("DELETE");
+                                break;
+                            default:
+                                throw new IllegalStateException("Unexpected value: " + servicio);
+                        }
 
                         InputStream in = urlConnection.getInputStream();
 
@@ -230,7 +235,7 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
                 switch (this.servicio) {
                     case LISTAR_PROFESORES: {
                         try {
-                            JSONArray array = new JSONArray(s.toString());
+                            JSONArray array = new JSONArray(s);
                             profesorViewModel.getArrayTeachers().clear();
                             for (int i = 0; i < array.length(); i++) {
                                 JSONObject curso_json = array.getJSONObject(i);
@@ -250,7 +255,8 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
                     }
                     break;
                     case ELIMINAR_PROFESOR:
-                        adapter.notifyDataSetChanged();
+                        adapter.getmDataset().add(posicion, profesor);
+                        adapter.notifyItemInserted(posicion);
                         break;
                 }
             }
@@ -259,7 +265,7 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
         MyAsyncTask task;
         switch (servicio) {
             case LISTAR_PROFESORES:
-                task = new MyAsyncTask(servicio, null);
+                task = new MyAsyncTask(servicio, new Profesor());
                 break;
             case ELIMINAR_PROFESOR:
                 task = new MyAsyncTask(servicio, profesor);
@@ -271,8 +277,8 @@ public class ProfesorFragment extends Fragment implements SearchView.OnQueryText
         return task.getStatus();
     }
 
-    public void removeProfesor(Profesor aux) {
-        solicitarServicio(SERVICIOS_PROFESORES.ELIMINAR_PROFESOR, aux);
+    public void removeProfesor(int posicion, Profesor aux) {
+        solicitarServicio(SERVICIOS_PROFESORES.ELIMINAR_PROFESOR, posicion, aux);
     }
 }
 
