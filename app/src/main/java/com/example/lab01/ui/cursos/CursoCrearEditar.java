@@ -67,8 +67,11 @@ public class CursoCrearEditar extends AppCompatActivity {
                     Curso curso = obtenerCursoDeCampos();
                     if (curso != null) {
                         Intent intent = new Intent(CursoCrearEditar.this, MenuPrincipal.class);
-                        CursoFragment.getAdapter().getModel().agregarCurso(curso);
-                        CursoFragment.getAdapter().notifyItemInserted(CursoFragment.getAdapter().getItemCount());
+                        if (CursoFragment.getAdapter().getModel().agregarCurso(curso)) {
+                            CursoFragment.getAdapter().notifyItemInserted(CursoFragment.getAdapter().getItemCount());
+                        } else {
+                            mostrarMensaje("ERROR", "ocurrio un error inesperado");
+                        }
                         intent.putExtra("vamos_a_cursos", "si");
                         startActivity(intent);
                     }
@@ -88,7 +91,12 @@ public class CursoCrearEditar extends AppCompatActivity {
                     if (curso != null) {
                         Intent intent = new Intent(CursoCrearEditar.this, MenuPrincipal.class);
                         int pos = CursoFragment.getAdapter().getModel().editarCurso(curso);
-                        CursoFragment.getAdapter().notifyItemChanged(pos);
+                        if (pos != -1) {
+                            CursoFragment.getAdapter().notifyItemChanged(pos);
+                        } else {
+                            mostrarMensaje("ERROR", "ocurrio un error inesperado");
+                        }
+
                         intent.putExtra("vamos_a_cursos", "si");
                         startActivity(intent);
                     }

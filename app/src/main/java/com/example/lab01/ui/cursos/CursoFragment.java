@@ -3,6 +3,7 @@ package com.example.lab01.ui.cursos;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -89,22 +91,26 @@ public class CursoFragment extends Fragment implements CursoAdapter.CursoAdapter
     public void eliminar(final int pos) {
         final Curso curso = adapter.getModel().getCursosFiltrados().get(pos);
         final int pos2 = adapter.getModel().getCursos().indexOf(curso);
-        adapter.getModel().eliminarCurso(curso);
-        adapter.notifyItemRemoved(pos);
-        Snackbar.make(recyclerView, curso.getNombre(), Snackbar.LENGTH_LONG).setAction("Deshacer", new View.OnClickListener() {
-            private boolean flag = true;
-            @Override
-            public void onClick(View view) {
-                if (flag) {
-                    adapter.getModel().getCursos().add(pos2, curso);
-                    if (adapter.getModel().getCursos() != adapter.getModel().getCursosFiltrados())
-                        adapter.getModel().getCursosFiltrados().add(pos, curso);
-                    cursoViewModel.solicitarServicio(SERVICIOS_CURSOS.AGREGAR_CURSO, curso);
-                    adapter.notifyItemInserted(pos);
+        if (adapter.getModel().eliminarCurso(curso)) {
+            adapter.notifyItemRemoved(pos);
+            Snackbar.make(recyclerView, curso.getNombre(), Snackbar.LENGTH_LONG).setAction("Deshacer", new View.OnClickListener() {
+                private boolean flag = true;
+
+                @Override
+                public void onClick(View view) {
+                    if (flag) {
+                        adapter.getModel().getCursos().add(pos2, curso);
+                        if (adapter.getModel().getCursos() != adapter.getModel().getCursosFiltrados())
+                            adapter.getModel().getCursosFiltrados().add(pos, curso);
+                        cursoViewModel.solicitarServicio(SERVICIOS_CURSOS.AGREGAR_CURSO, curso);
+                        adapter.notifyItemInserted(pos);
+                    }
+                    flag = false;
                 }
-                flag = false;
-            }
-        }).show();
+            }).show();
+        } else {
+            mostrarMensaje("ERROR", "Ocurrio un error inesperado.");
+        }
     }
 
     @Override
@@ -179,5 +185,19 @@ public class CursoFragment extends Fragment implements CursoAdapter.CursoAdapter
 
         Wait myAsyncTasks = new Wait();
         myAsyncTasks.execute();
+    }
+
+
+    // Muestra un cuadro de dialogo con titulo/mensaje
+    private void mostrarMensaje(String titulo, String mensaje) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(titulo)
+                .setMessage(mensaje)
+                .setPositiveButton("entendido!", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        return;
+                    }
+                }).show();
     }
 }

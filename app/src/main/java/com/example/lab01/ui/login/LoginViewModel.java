@@ -4,12 +4,19 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import android.os.AsyncTask;
 import android.util.Patterns;
 
+import com.example.lab01.Logica.Usuario;
 import com.example.lab01.data.LoginRepository;
-import com.example.lab01.data.Result;
 import com.example.lab01.data.model.LoggedInUser;
 import com.example.lab01.R;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class LoginViewModel extends ViewModel {
 
@@ -30,15 +37,81 @@ public class LoginViewModel extends ViewModel {
     }
 
     public void login(String username, String password) {
-        // can be launched in a separate asynchronous job
-        Result<LoggedInUser> result = loginRepository.login(username, password);
 
-        if (result instanceof Result.Success) {
-            LoggedInUser data = ((Result.Success<LoggedInUser>) result).getData();
-            loginResult.setValue(new LoginResult(new LoggedInUserView(data.getDisplayName())));
-        } else {
+        class MyAsyncTask extends AsyncTask<String, String, String> {
+
+            private Usuario usuario;
+            private String d_url;
+
+            public MyAsyncTask(Usuario usuario) throws UnsupportedEncodingException {
+                this.usuario = usuario;
+                this.d_url = "http://10.0.2.2:8084/LAB01-WEB/ServletUsuario?cedula=" + usuario.getCedula().trim() + "&clave=" + usuario.getClave().trim();
+            }
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+            }
+
+            @Override
+            protected String doInBackground(String... params) {
+
+                String current = "";
+                try {
+                    URL url;
+                    HttpURLConnection urlConnection = null;
+                    try {
+                        url = new URL(this.d_url);
+                        urlConnection = (HttpURLConnection) url.openConnection();
+
+                        urlConnection.setDoOutput(false);
+                        urlConnection.setRequestMethod("GET");
+
+                        InputStream in = urlConnection.getInputStream();
+                        InputStreamReader isw = new InputStreamReader(in);
+                        int data = isw.read();
+                        while (data != -1) {
+                            current += (char) data;
+                            data = isw.read();
+                            System.out.print(current);
+                        }
+                        // return the data to onPostExecute method
+                        return current;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (urlConnection != null) {
+                            urlConnection.disconnect();
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return "Exception: " + e.getMessage();
+                }
+
+                return current;
+            }
+
+            @Override
+            protected void onPostExecute(String s) {
+
+                if (s.trim().equals("1")) {
+                    LoggedInUser data = new LoggedInUser(java.util.UUID.randomUUID().toString(), usuario.getCedula());
+                    loginResult.setValue(new LoginResult(new LoggedInUserView(data.getDisplayName())));
+                } else {
+                    loginResult.setValue(new LoginResult(R.string.login_failed));
+                }
+            }
+        }
+
+        Usuario usuario = new Usuario(username, password);
+        MyAsyncTask asyncTask = null;
+        try {
+            asyncTask = new MyAsyncTask(usuario);
+        } catch (UnsupportedEncodingException e) {
             loginResult.setValue(new LoginResult(R.string.login_failed));
         }
+        asyncTask.execute();
     }
 
     public void loginDataChanged(String username, String password) {

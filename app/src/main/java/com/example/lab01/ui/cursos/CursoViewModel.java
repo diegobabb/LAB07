@@ -6,10 +6,13 @@ import android.widget.Toast;
 
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
 import com.example.lab01.Logica.Curso;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -49,25 +52,33 @@ public class CursoViewModel extends ViewModel {
     }
 
     public boolean agregarCurso(Curso curso) {
-        cursos.add(curso);
-        return solicitarServicio(SERVICIOS_CURSOS.AGREGAR_CURSO, curso) == 1;
+        if (solicitarServicio(SERVICIOS_CURSOS.AGREGAR_CURSO, curso) == 1) {
+            cursos.add(curso);
+            return true;
+        } else
+            return false;
     }
 
     public boolean eliminarCurso(Curso c) {
-        cursos.remove(c);
-        cursosFiltrados.remove(c);
-        return solicitarServicio(SERVICIOS_CURSOS.ELIMINAR_CURSO, c) == 1;
+        if (solicitarServicio(SERVICIOS_CURSOS.ELIMINAR_CURSO, c) == 1) {
+            cursos.remove(c);
+            cursosFiltrados.remove(c);
+            return true;
+        } else
+            return false;
     }
 
     public int editarCurso(Curso curso) {
         int index = 0;
         for (Curso curso_ite : cursos) {
             if (curso_ite.getCodigo().trim().toLowerCase().equals(curso.getCodigo().trim().toLowerCase())) {
-                cursos.remove(curso_ite);
-                cursosFiltrados.remove(curso_ite);
-                cursos.add(index, curso);
-                solicitarServicio(SERVICIOS_CURSOS.EDITAR_CURSO, curso);
-                return index;
+                if (solicitarServicio(SERVICIOS_CURSOS.EDITAR_CURSO, curso) == 1) {
+                    cursos.remove(curso_ite);
+                    cursosFiltrados.remove(curso_ite);
+                    cursos.add(index, curso);
+                    return index;
+                } else
+                    return -1;
             }
             index++;
         }
@@ -80,7 +91,7 @@ public class CursoViewModel extends ViewModel {
 
             SERVICIOS_CURSOS servicio;
             String url;
-            int response = 0;
+            int response = 1;
 
             public MyAsyncTask(SERVICIOS_CURSOS s, Curso c) throws UnsupportedEncodingException {
                 super();
@@ -123,11 +134,19 @@ public class CursoViewModel extends ViewModel {
 
                         urlConnection.setDoOutput(false);
                         //Request Method
-                        switch (this.servicio){
-                            case LISTAR_CURSOS: urlConnection.setRequestMethod("GET"); break;
-                            case EDITAR_CURSO: urlConnection.setRequestMethod("PUT"); break;
-                            case ELIMINAR_CURSO: urlConnection.setRequestMethod("DELETE"); break;
-                            case AGREGAR_CURSO: urlConnection.setRequestMethod("POST"); break;
+                        switch (this.servicio) {
+                            case LISTAR_CURSOS:
+                                urlConnection.setRequestMethod("GET");
+                                break;
+                            case EDITAR_CURSO:
+                                urlConnection.setRequestMethod("PUT");
+                                break;
+                            case ELIMINAR_CURSO:
+                                urlConnection.setRequestMethod("DELETE");
+                                break;
+                            case AGREGAR_CURSO:
+                                urlConnection.setRequestMethod("POST");
+                                break;
                         }
 
                         InputStream in = urlConnection.getInputStream();
@@ -157,53 +176,41 @@ public class CursoViewModel extends ViewModel {
 
             @Override
             protected void onPostExecute(String s) {
-                switch (this.servicio) {
-                    case LISTAR_CURSOS: {
-                        try {
-                            JSONArray array = new JSONArray(s.toString());
-                            for (int i = 0; i < array.length(); i++) {
-                                JSONObject curso_json = array.getJSONObject(i);
-                                Curso curso = new Curso(
-                                        curso_json.getString("codigo"),
-                                        curso_json.getString("nombre"),
-                                        curso_json.getInt("credito"),
-                                        curso_json.getInt("horas"),
-                                        curso_json.getInt("carrera")
-                                );
-                                cursos.add(curso);
-                            }
-                            cursosFiltrados = cursos;
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    } break;
 
-                    case AGREGAR_CURSO:{
-                        Log.i("Response:", s.toString());
-                        response = Integer.parseInt(s.trim());
-                    } break;
-                    case ELIMINAR_CURSO:{
-                        Log.i("Response:", s.toString());
-                        response = Integer.parseInt(s.trim());
-                    } break;
-                    case EDITAR_CURSO:{
-                        Log.i("Response:", s.toString());
-                        response = Integer.parseInt(s.trim());
-                    } break;
-                }
+                if (this.servicio == SERVICIOS_CURSOS.LISTAR_CURSOS) {
+                    try {
+                        JSONArray array = new JSONArray(s.toString());
+                        for (int i = 0; i < array.length(); i++) {
+                            JSONObject curso_json = array.getJSONObject(i);
+                            Curso curso = new Curso(
+                                    curso_json.getString("codigo"),
+                                    curso_json.getString("nombre"),
+                                    curso_json.getInt("credito"),
+                                    curso_json.getInt("horas"),
+                                    curso_json.getInt("carrera")
+                            );
+                            cursos.add(curso);
+                        }
+                        cursosFiltrados = cursos;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                    response = Integer.parseInt(s.trim());
 
                 CursoFragment.getAdapter().notifyDataSetChanged();
                 STATUS = Status.FINISHED;
             }
         }
+
         try {
             MyAsyncTask task = new MyAsyncTask(servicio, c);
             task.execute();
             return task.response;
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             return 0;
         }
+
     }
 
 }

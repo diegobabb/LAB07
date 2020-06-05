@@ -24,6 +24,12 @@ public class Usuario implements Serializable {
         this.cedula = cedula;
     }
 
+    public Usuario(String cedula, String clave) {
+        this.cedula = cedula;
+        this.clave = clave;
+        this.correo = "";
+    }
+
     public String getCorreo() {
         return correo;
     }
